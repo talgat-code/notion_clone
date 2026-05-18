@@ -2,7 +2,20 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppState, Block, BlockType, Page } from './types';
 
-const EMOJIS = ['📄', '📝', '📌', '🗒️', '💡', '🎯', '📚', '🔖', '✨', '🗂️'];
+export const COVERS = [
+  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+  'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+  'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+  'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+  'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+  'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+  'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+  'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+  'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+];
+
+const EMOJIS = ['📄','📝','📌','🗒️','💡','🎯','📚','🔖','✨','🗂️','🏠','🌟','🔥','💎','🚀'];
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -13,20 +26,27 @@ function newPage(title = 'Untitled', parentId?: string): Page {
     id: uid(),
     title,
     icon: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+    cover: '',
     blocks: [{ id: uid(), type: 'text', content: '' }],
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    lastVisited: Date.now(),
     parentId,
     children: [],
+    favorited: false,
   };
 }
 
 interface Store extends AppState {
   createPage: (parentId?: string) => string;
   deletePage: (id: string) => void;
-  setActivePage: (id: string) => void;
+  visitPage: (id: string) => void;
+  goHome: () => void;
   updatePageTitle: (id: string, title: string) => void;
   updatePageIcon: (id: string, icon: string) => void;
+  updatePageCover: (id: string, cover: string) => void;
+  toggleFavorite: (id: string) => void;
+  duplicatePage: (id: string) => string;
   addBlock: (pageId: string, afterId: string, type?: BlockType) => string;
   updateBlock: (pageId: string, blockId: string, content: string) => void;
   toggleTodo: (pageId: string, blockId: string) => void;
@@ -37,23 +57,32 @@ interface Store extends AppState {
 
 export const useStore = create<Store>()(
   persist(
-    (set, _get) => ({
+    (set, get) => ({
       pages: {},
       rootPages: [],
       activePage: null,
+      view: 'home' as const,
+      recentPages: [],
 
       createPage(parentId) {
         const page = newPage('Untitled', parentId);
         set((s) => {
           const pages = { ...s.pages, [page.id]: page };
+          const recentPages = [page.id, ...s.recentPages.filter((id) => id !== page.id)].slice(0, 10);
           if (parentId && pages[parentId]) {
             pages[parentId] = {
               ...pages[parentId],
               children: [...pages[parentId].children, page.id],
             };
-            return { pages, activePage: page.id };
+            return { pages, activePage: page.id, view: 'page', recentPages };
           }
-          return { pages, rootPages: [...s.rootPages, page.id], activePage: page.id };
+          return {
+            pages,
+            rootPages: [...s.rootPages, page.id],
+            activePage: page.id,
+            view: 'page',
+            recentPages,
+          };
         });
         return page.id;
       },
@@ -64,7 +93,6 @@ export const useStore = create<Store>()(
           const page = pages[id];
           if (!page) return s;
 
-          // Remove from parent or root
           if (page.parentId && pages[page.parentId]) {
             pages[page.parentId] = {
               ...pages[page.parentId],
@@ -72,49 +100,109 @@ export const useStore = create<Store>()(
             };
           }
           const rootPages = s.rootPages.filter((r) => r !== id);
+          const recentPages = s.recentPages.filter((r) => r !== id);
 
-          // Delete page and all descendants
           const toDelete = [id];
           while (toDelete.length) {
-            const current = toDelete.pop()!;
-            const p = pages[current];
+            const cur = toDelete.pop()!;
+            const p = pages[cur];
             if (p?.children) toDelete.push(...p.children);
-            delete pages[current];
+            delete pages[cur];
           }
 
           const activePage =
             s.activePage === id
-              ? rootPages[0] ?? Object.keys(pages)[0] ?? null
+              ? rootPages.find((r) => pages[r]) ?? Object.keys(pages)[0] ?? null
               : s.activePage;
+          const view = activePage ? 'page' : 'home';
 
-          return { pages, rootPages, activePage };
+          return { pages, rootPages, activePage, view, recentPages };
         });
       },
 
-      setActivePage(id) {
-        set({ activePage: id });
+      visitPage(id) {
+        set((s) => {
+          const page = s.pages[id];
+          if (!page) return s;
+          const recentPages = [id, ...s.recentPages.filter((r) => r !== id)].slice(0, 10);
+          return {
+            activePage: id,
+            view: 'page',
+            recentPages,
+            pages: { ...s.pages, [id]: { ...page, lastVisited: Date.now() } },
+          };
+        });
+      },
+
+      goHome() {
+        set({ view: 'home' });
       },
 
       updatePageTitle(id, title) {
         set((s) => ({
-          pages: {
-            ...s.pages,
-            [id]: { ...s.pages[id], title, updatedAt: Date.now() },
-          },
+          pages: { ...s.pages, [id]: { ...s.pages[id], title, updatedAt: Date.now() } },
         }));
       },
 
       updatePageIcon(id, icon) {
         set((s) => ({
+          pages: { ...s.pages, [id]: { ...s.pages[id], icon, updatedAt: Date.now() } },
+        }));
+      },
+
+      updatePageCover(id, cover) {
+        set((s) => ({
+          pages: { ...s.pages, [id]: { ...s.pages[id], cover, updatedAt: Date.now() } },
+        }));
+      },
+
+      toggleFavorite(id) {
+        set((s) => ({
           pages: {
             ...s.pages,
-            [id]: { ...s.pages[id], icon, updatedAt: Date.now() },
+            [id]: { ...s.pages[id], favorited: !s.pages[id]?.favorited },
           },
         }));
       },
 
+      duplicatePage(id) {
+        const page = get().pages[id];
+        if (!page) return id;
+        const dup: Page = {
+          ...page,
+          id: uid(),
+          title: page.title + ' (copy)',
+          blocks: page.blocks.map((b) => ({ ...b, id: uid() })),
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          lastVisited: Date.now(),
+          children: [],
+          favorited: false,
+        };
+        set((s) => {
+          const pages = { ...s.pages, [dup.id]: dup };
+          if (page.parentId && pages[page.parentId]) {
+            pages[page.parentId] = {
+              ...pages[page.parentId],
+              children: [...pages[page.parentId].children, dup.id],
+            };
+            return { pages, activePage: dup.id, view: 'page' };
+          }
+          const idx = s.rootPages.indexOf(id);
+          const rootPages = [...s.rootPages];
+          rootPages.splice(idx + 1, 0, dup.id);
+          return { pages, rootPages, activePage: dup.id, view: 'page' };
+        });
+        return dup.id;
+      },
+
       addBlock(pageId, afterId, type = 'text') {
-        const newBlock: Block = { id: uid(), type, content: '' };
+        const newBlock: Block = {
+          id: uid(),
+          type,
+          content: '',
+          ...(type === 'callout' ? { calloutEmoji: '💡' } : {}),
+        };
         set((s) => {
           const page = s.pages[pageId];
           if (!page) return s;
@@ -122,10 +210,7 @@ export const useStore = create<Store>()(
           const blocks = [...page.blocks];
           blocks.splice(idx + 1, 0, newBlock);
           return {
-            pages: {
-              ...s.pages,
-              [pageId]: { ...page, blocks, updatedAt: Date.now() },
-            },
+            pages: { ...s.pages, [pageId]: { ...page, blocks, updatedAt: Date.now() } },
           };
         });
         return newBlock.id;
@@ -141,9 +226,7 @@ export const useStore = create<Store>()(
               [pageId]: {
                 ...page,
                 updatedAt: Date.now(),
-                blocks: page.blocks.map((b) =>
-                  b.id === blockId ? { ...b, content } : b
-                ),
+                blocks: page.blocks.map((b) => (b.id === blockId ? { ...b, content } : b)),
               },
             },
           };
@@ -159,9 +242,7 @@ export const useStore = create<Store>()(
               ...s.pages,
               [pageId]: {
                 ...page,
-                blocks: page.blocks.map((b) =>
-                  b.id === blockId ? { ...b, checked: !b.checked } : b
-                ),
+                blocks: page.blocks.map((b) => (b.id === blockId ? { ...b, checked: !b.checked } : b)),
               },
             },
           };
@@ -195,7 +276,9 @@ export const useStore = create<Store>()(
               [pageId]: {
                 ...page,
                 blocks: page.blocks.map((b) =>
-                  b.id === blockId ? { ...b, type, checked: false } : b
+                  b.id === blockId
+                    ? { ...b, type, checked: false, ...(type === 'callout' ? { calloutEmoji: b.calloutEmoji ?? '💡' } : {}) }
+                    : b
                 ),
               },
             },
@@ -213,12 +296,10 @@ export const useStore = create<Store>()(
           const newIdx = direction === 'up' ? idx - 1 : idx + 1;
           if (newIdx < 0 || newIdx >= blocks.length) return s;
           [blocks[idx], blocks[newIdx]] = [blocks[newIdx], blocks[idx]];
-          return {
-            pages: { ...s.pages, [pageId]: { ...page, blocks } },
-          };
+          return { pages: { ...s.pages, [pageId]: { ...page, blocks } } };
         });
       },
     }),
-    { name: 'notion-clone-storage' }
+    { name: 'notion-clone-v2' }
   )
 );
