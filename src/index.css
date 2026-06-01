@@ -3,43 +3,44 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Surfaces — layered, slightly cool dark */
-  --bg:          #1a1a1c;
-  --bg2:         #212123;
-  --bg3:         #27272a;
-  --sidebar:     #19191b;
-  --surface:     #2a2a2e;
-  --surface-hi:  #313137;
+  /* Surfaces — clean warm-white, layered */
+  --bg:          #ffffff;
+  --bg2:         #fbfbfa;
+  --bg3:         #f1f1ef;
+  --sidebar:     #f7f7f5;
+  --surface:     #ffffff;
+  --surface-hi:  #f1f0ee;
 
-  /* Text */
-  --text:        #ececec;
-  --text-muted:  #9b9a97;
-  --text-faint:  #6b6a66;
+  /* Text — Notion warm graphite */
+  --text:        #37352f;
+  --text-muted:  #787774;
+  --text-faint:  #a4a29c;
 
   /* Lines */
-  --border:      rgba(255,255,255,.07);
-  --border-hi:   rgba(255,255,255,.13);
-  --hover:       rgba(255,255,255,.055);
-  --active:      rgba(255,255,255,.09);
+  --border:      rgba(15,15,15,.09);
+  --border-hi:   rgba(15,15,15,.16);
+  --hover:       rgba(15,15,15,.045);
+  --active:      rgba(15,15,15,.08);
 
   /* Accent */
-  --accent:      #3b8bf0;
-  --accent-hi:   #5a9ff5;
-  --accent-dim:  rgba(59,139,240,.16);
-  --accent-grad: linear-gradient(135deg, #4a90f2 0%, #6a5cf0 100%);
+  --accent:      #2f7de1;
+  --accent-hi:   #4a90f2;
+  --accent-dim:  rgba(47,125,225,.14);
+  --accent-grad: linear-gradient(135deg, #4a90f2 0%, #7b6cf0 100%);
 
-  --red:         #ec5c5c;
-  --gold:        #f5c451;
+  --red:         #e0584f;
+  --gold:        #e8a33d;
 
-  --callout-bg:  #242427;
-  --code-bg:     #1c1c1f;
+  --callout-bg:  #f7f6f3;
+  --code-bg:     #f7f6f3;
+  --code-text:   #c0341d;
 
   /* Effects */
-  --shadow-sm:   0 1px 2px rgba(0,0,0,.3);
-  --shadow-md:   0 4px 16px rgba(0,0,0,.36);
-  --shadow-lg:   0 12px 40px rgba(0,0,0,.5);
-  --shadow-xl:   0 24px 64px rgba(0,0,0,.62);
-  --glass:       rgba(38,38,42,.78);
+  --shadow-sm:   0 1px 2px rgba(15,15,15,.08);
+  --shadow-md:   0 6px 20px rgba(15,15,15,.1);
+  --shadow-lg:   0 14px 44px rgba(15,15,15,.16);
+  --shadow-xl:   0 26px 70px rgba(15,15,15,.22);
+  --glass:       rgba(255,255,255,.82);
   --ring:        0 0 0 3px var(--accent-dim);
 
   --ease:        cubic-bezier(.22,.61,.36,1);
@@ -62,7 +63,7 @@ html, body, #root {
   font-feature-settings: 'cv02','cv03','cv04','cv11';
 }
 
-/* Ambient gradient glow behind the whole app */
+/* Ambient gradient glow — soft tint on the light canvas */
 body::before {
   content: '';
   position: fixed;
@@ -70,26 +71,26 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(1100px 600px at 78% -8%, rgba(106,92,240,.10), transparent 60%),
-    radial-gradient(900px 520px at 8% 108%, rgba(59,139,240,.08), transparent 55%);
+    radial-gradient(1100px 600px at 80% -10%, rgba(123,108,240,.07), transparent 60%),
+    radial-gradient(900px 520px at 5% 110%, rgba(74,144,242,.06), transparent 55%);
 }
 
 button { font-family: var(--font); }
 input  { font-family: var(--font); }
 pre    { font-family: var(--mono); }
 
-::selection { background: var(--accent-dim); color: #fff; }
+::selection { background: var(--accent-dim); color: var(--text); }
 
-::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.09);
-  border-radius: 6px;
-  border: 2px solid transparent;
+  background: rgba(15,15,15,.16);
+  border-radius: 7px;
+  border: 3px solid transparent;
   background-clip: padding-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,.18);
+  background: rgba(15,15,15,.28);
   background-clip: padding-box;
 }
 

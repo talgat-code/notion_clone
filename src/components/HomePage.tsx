@@ -1,4 +1,4 @@
-import { useStore } from '../store';
+import { useStore, TEMPLATES } from '../store';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -8,18 +8,48 @@ function greeting(): string {
 }
 
 export function HomePage() {
-  const { pages, recentPages, visitPage, createPage } = useStore();
+  const { pages, recentPages, visitPage, createFromTemplate } = useStore();
 
   const recents = recentPages
     .filter((id) => pages[id])
     .slice(0, 8)
     .map((id) => pages[id]);
 
+  const allPages = Object.values(pages).sort((a, b) => b.updatedAt - a.updatedAt);
+
   return (
     <div className="home-page">
       <div className="home-greeting">{greeting()}</div>
 
-      {recents.length > 0 ? (
+      {/* Templates / quick start */}
+      <section className="home-section">
+        <h2 className="home-section-title">
+          <span>✨</span> Start with a template
+        </h2>
+        <div className="template-grid">
+          {TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.key}
+              className="template-card"
+              onClick={() => createFromTemplate(tpl)}
+            >
+              <div
+                className="template-card-icon"
+                style={tpl.cover ? { background: tpl.cover } : undefined}
+              >
+                {tpl.icon}
+              </div>
+              <div className="template-card-text">
+                <div className="template-card-label">{tpl.label}</div>
+                <div className="template-card-desc">{tpl.description}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Recently visited */}
+      {recents.length > 0 && (
         <section className="home-section">
           <h2 className="home-section-title">
             <span>🕐</span> Recently visited
@@ -49,13 +79,39 @@ export function HomePage() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* All pages */}
+      {allPages.length > 0 ? (
+        <section className="home-section">
+          <h2 className="home-section-title">
+            <span>📁</span> All pages
+            <span className="home-section-count">{allPages.length}</span>
+          </h2>
+          <div className="page-list">
+            {allPages.map((page) => (
+              <button
+                key={page.id}
+                className="page-list-card"
+                onClick={() => visitPage(page.id)}
+              >
+                <span className="page-list-icon">{page.icon}</span>
+                <span className="page-list-title">{page.title || 'Untitled'}</span>
+                {page.favorited && <span className="page-list-fav">⭐</span>}
+                <span className="page-list-date">
+                  {new Date(page.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       ) : (
         <div className="home-empty">
           <div className="home-empty-icon">📄</div>
-          <p>No pages yet — create your first one.</p>
-          <button className="home-new-btn" onClick={() => createPage()}>
-            + New page
-          </button>
+          <p>No pages yet — pick a template above to begin.</p>
         </div>
       )}
     </div>

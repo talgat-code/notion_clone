@@ -21,6 +21,110 @@ function uid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+export interface PageTemplate {
+  key: string;
+  label: string;
+  description: string;
+  icon: string;
+  cover: string;
+  title: string;
+  blocks: Array<Omit<Block, 'id'>>;
+}
+
+export const TEMPLATES: PageTemplate[] = [
+  {
+    key: 'blank',
+    label: 'Blank page',
+    description: 'Start from scratch',
+    icon: '📄',
+    cover: '',
+    title: '',
+    blocks: [{ type: 'text', content: '' }],
+  },
+  {
+    key: 'todo',
+    label: 'To-do list',
+    description: 'Track your tasks',
+    icon: '✅',
+    cover: COVERS[3],
+    title: 'To-do list',
+    blocks: [
+      { type: 'h2', content: 'Today' },
+      { type: 'todo', content: 'First task', checked: false },
+      { type: 'todo', content: 'Second task', checked: false },
+      { type: 'todo', content: 'Third task', checked: false },
+      { type: 'h2', content: 'Later' },
+      { type: 'todo', content: '', checked: false },
+    ],
+  },
+  {
+    key: 'meeting',
+    label: 'Meeting notes',
+    description: 'Agenda & action items',
+    icon: '📅',
+    cover: COVERS[2],
+    title: 'Meeting notes',
+    blocks: [
+      { type: 'callout', content: 'Date · Attendees · Goal', calloutEmoji: '📌' },
+      { type: 'h2', content: 'Agenda' },
+      { type: 'bullet', content: '' },
+      { type: 'h2', content: 'Notes' },
+      { type: 'text', content: '' },
+      { type: 'h2', content: 'Action items' },
+      { type: 'todo', content: '', checked: false },
+    ],
+  },
+  {
+    key: 'project',
+    label: 'Project plan',
+    description: 'Goals, scope & milestones',
+    icon: '🎯',
+    cover: COVERS[0],
+    title: 'Project plan',
+    blocks: [
+      { type: 'callout', content: 'A short summary of what this project is about.', calloutEmoji: '💡' },
+      { type: 'h2', content: 'Goals' },
+      { type: 'bullet', content: '' },
+      { type: 'h2', content: 'Milestones' },
+      { type: 'todo', content: 'Kickoff', checked: false },
+      { type: 'todo', content: 'MVP', checked: false },
+      { type: 'todo', content: 'Launch', checked: false },
+      { type: 'h2', content: 'Notes' },
+      { type: 'text', content: '' },
+    ],
+  },
+  {
+    key: 'journal',
+    label: 'Daily journal',
+    description: 'Reflect on your day',
+    icon: '📔',
+    cover: COVERS[5],
+    title: 'Daily journal',
+    blocks: [
+      { type: 'h2', content: 'How I feel today' },
+      { type: 'text', content: '' },
+      { type: 'h2', content: 'Three things I’m grateful for' },
+      { type: 'numbered', content: '' },
+      { type: 'h2', content: 'Highlights' },
+      { type: 'bullet', content: '' },
+    ],
+  },
+  {
+    key: 'reading',
+    label: 'Reading list',
+    description: 'Books & articles to read',
+    icon: '📚',
+    cover: COVERS[9],
+    title: 'Reading list',
+    blocks: [
+      { type: 'h2', content: 'Up next' },
+      { type: 'todo', content: '', checked: false },
+      { type: 'h2', content: 'Finished' },
+      { type: 'todo', content: '', checked: true },
+    ],
+  },
+];
+
 function newPage(title = 'Untitled', parentId?: string): Page {
   return {
     id: uid(),
@@ -39,6 +143,7 @@ function newPage(title = 'Untitled', parentId?: string): Page {
 
 interface Store extends AppState {
   createPage: (parentId?: string) => string;
+  createFromTemplate: (tpl: PageTemplate) => string;
   deletePage: (id: string) => void;
   visitPage: (id: string) => void;
   goHome: () => void;
@@ -78,6 +183,26 @@ export const useStore = create<Store>()(
           }
           return {
             pages,
+            rootPages: [...s.rootPages, page.id],
+            activePage: page.id,
+            view: 'page',
+            recentPages,
+          };
+        });
+        return page.id;
+      },
+
+      createFromTemplate(tpl) {
+        const page: Page = {
+          ...newPage(tpl.title),
+          icon: tpl.icon,
+          cover: tpl.cover,
+          blocks: tpl.blocks.map((b) => ({ ...b, id: uid() })),
+        };
+        set((s) => {
+          const recentPages = [page.id, ...s.recentPages.filter((id) => id !== page.id)].slice(0, 10);
+          return {
+            pages: { ...s.pages, [page.id]: page },
             rootPages: [...s.rootPages, page.id],
             activePage: page.id,
             view: 'page',
