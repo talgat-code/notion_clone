@@ -3,6 +3,7 @@ import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { PageView } from './components/PageView';
+import { Calendar } from './components/Calendar';
 import { SearchModal } from './components/SearchModal';
 import { useStore } from './store';
 import './App.css';
@@ -37,6 +38,8 @@ export default function App() {
         <div className="content-scroll">
           {view === 'home' ? (
             <HomePage />
+          ) : view === 'calendar' ? (
+            <Calendar />
           ) : activePage ? (
             <PageView pageId={activePage} />
           ) : (

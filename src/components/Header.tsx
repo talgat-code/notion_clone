@@ -14,11 +14,13 @@ function getBreadcrumbs(pages: Record<string, Page>, pageId: string) {
 export function Header() {
   const { pages, activePage, view, visitPage, toggleFavorite } = useStore();
 
-  if (view === 'home') {
+  if (view === 'home' || view === 'calendar') {
     return (
       <header className="header">
         <div className="header-breadcrumbs">
-          <span className="header-bc-item current">Home</span>
+          <span className="header-bc-item current">
+            {view === 'calendar' ? '📅 Calendar' : 'Home'}
+          </span>
         </div>
         <div className="header-actions" />
       </header>

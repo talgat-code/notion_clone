@@ -147,6 +147,7 @@ interface Store extends AppState {
   deletePage: (id: string) => void;
   visitPage: (id: string) => void;
   goHome: () => void;
+  goCalendar: () => void;
   updatePageTitle: (id: string, title: string) => void;
   updatePageIcon: (id: string, icon: string) => void;
   updatePageCover: (id: string, cover: string) => void;
@@ -261,6 +262,10 @@ export const useStore = create<Store>()(
 
       goHome() {
         set({ view: 'home' });
+      },
+
+      goCalendar() {
+        set({ view: 'calendar' });
       },
 
       updatePageTitle(id, title) {

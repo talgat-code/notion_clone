@@ -70,7 +70,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSearch }: SidebarProps) {
-  const { pages, rootPages, view, activePage, createPage, goHome, visitPage } = useStore();
+  const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, visitPage } = useStore();
 
   const favorites = Object.values(pages).filter((p) => p.favorited);
 
@@ -95,6 +95,13 @@ export function Sidebar({ onSearch }: SidebarProps) {
         >
           <span className="nav-icon">🏠</span>
           Home
+        </button>
+        <button
+          className={`nav-item ${view === 'calendar' ? 'nav-item--active' : ''}`}
+          onClick={goCalendar}
+        >
+          <span className="nav-icon">📅</span>
+          Calendar
         </button>
         <button className="nav-item">
           <span className="nav-icon">📥</span>

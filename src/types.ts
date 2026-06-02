@@ -29,6 +29,6 @@ export interface AppState {
   pages: Record<string, Page>;
   rootPages: string[];
   activePage: string | null;
-  view: 'home' | 'page';
+  view: 'home' | 'page' | 'calendar';
   recentPages: string[];
 }
