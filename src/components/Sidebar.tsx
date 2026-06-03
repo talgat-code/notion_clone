@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store';
+import { useCurrentUser } from '../auth';
+import { ProfileModal } from './ProfileModal';
 
 interface PageTreeItemProps {
   pageId: string;
@@ -71,16 +73,28 @@ interface SidebarProps {
 
 export function Sidebar({ onSearch }: SidebarProps) {
   const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, visitPage } = useStore();
+  const user = useCurrentUser();
+  const [showProfile, setShowProfile] = useState(false);
 
   const favorites = Object.values(pages).filter((p) => p.favorited);
+  const initial = (user?.name.trim()[0] || '?').toUpperCase();
 
   return (
     <aside className="sidebar">
-      {/* Workspace header */}
-      <div className="sidebar-workspace">
-        <div className="workspace-avatar">N</div>
-        <span className="workspace-name">My Workspace</span>
-      </div>
+      {/* Workspace header — opens profile */}
+      <button
+        className="sidebar-workspace"
+        onClick={() => setShowProfile(true)}
+        title="Account & profile"
+      >
+        <div className="workspace-avatar" style={user ? { background: user.color } : undefined}>
+          {user?.avatar || initial}
+        </div>
+        <span className="workspace-name">{user?.name || 'My Workspace'}</span>
+        <span className="workspace-action">⌄</span>
+      </button>
+
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
 
       {/* Navigation */}
       <nav className="sidebar-nav">

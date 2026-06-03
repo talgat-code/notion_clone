@@ -1,4 +1,5 @@
 import { useStore, TEMPLATES } from '../store';
+import { useCurrentUser } from '../auth';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -9,6 +10,8 @@ function greeting(): string {
 
 export function HomePage() {
   const { pages, recentPages, visitPage, createFromTemplate } = useStore();
+  const user = useCurrentUser();
+  const firstName = user?.name.trim().split(/\s+/)[0];
 
   const recents = recentPages
     .filter((id) => pages[id])
@@ -19,7 +22,7 @@ export function HomePage() {
 
   return (
     <div className="home-page">
-      <div className="home-greeting">{greeting()}</div>
+      <div className="home-greeting">{greeting()}{firstName ? `, ${firstName}` : ''}</div>
 
       {/* Templates / quick start */}
       <section className="home-section">
