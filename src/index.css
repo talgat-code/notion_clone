@@ -37,9 +37,10 @@
 
   /* Effects */
   --shadow-sm:   0 1px 2px rgba(15,15,15,.08);
-  --shadow-md:   0 6px 20px rgba(15,15,15,.1);
-  --shadow-lg:   0 14px 44px rgba(15,15,15,.16);
-  --shadow-xl:   0 26px 70px rgba(15,15,15,.22);
+  --shadow-md:   0 8px 26px rgba(15,15,15,.12);
+  --shadow-lg:   0 18px 52px rgba(15,15,15,.18);
+  --shadow-xl:   0 30px 80px rgba(15,15,15,.24);
+  --shadow-glow: 0 6px 22px rgba(74,144,242,.4);
   --glass:       rgba(255,255,255,.82);
   --ring:        0 0 0 3px var(--accent-dim);
 
@@ -56,7 +57,7 @@ html, body, #root {
   font-family: var(--font);
   background: var(--bg);
   color: var(--text);
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -71,8 +72,9 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(1100px 600px at 80% -10%, rgba(123,108,240,.07), transparent 60%),
-    radial-gradient(900px 520px at 5% 110%, rgba(74,144,242,.06), transparent 55%);
+    radial-gradient(1200px 660px at 82% -12%, rgba(123,108,240,.09), transparent 60%),
+    radial-gradient(1000px 580px at 3% 112%, rgba(74,144,242,.08), transparent 55%),
+    radial-gradient(700px 700px at 50% 50%, rgba(232,163,61,.025), transparent 70%);
 }
 
 button { font-family: var(--font); }
