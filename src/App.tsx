@@ -5,17 +5,20 @@ import { HomePage } from './components/HomePage';
 import { PageView } from './components/PageView';
 import { Calendar } from './components/Calendar';
 import { SearchModal } from './components/SearchModal';
+import { AuthScreen } from './components/AuthScreen';
 import { useStore } from './store';
+import { useCurrentUser } from './auth';
 import './App.css';
 
 export default function App() {
   const { activePage, rootPages, view, createPage } = useStore();
+  const currentUser = useCurrentUser();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Create welcome page on first launch
+  // Create welcome page on first launch (once signed in)
   useEffect(() => {
-    if (rootPages.length === 0) createPage();
-  }, []);
+    if (currentUser && rootPages.length === 0) createPage();
+  }, [currentUser]);
 
   // Global ⌘K / Ctrl+K to open search
   useEffect(() => {
@@ -28,6 +31,10 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  if (!currentUser) {
+    return <AuthScreen />;
+  }
 
   return (
     <div className="app">
