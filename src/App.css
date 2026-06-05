@@ -768,6 +768,86 @@
   padding: 1px 6px;
 }
 
+/* Drag-to-select a date range */
+.cal-grid--dragging { cursor: cell; user-select: none; }
+.cal-grid--dragging .cal-day:hover { background: var(--bg2); }
+.cal-day--selected,
+.cal-day--selected:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* New-event popover */
+.cal-event-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  animation: fadeIn .14s var(--ease-out);
+}
+.cal-event-popover {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-hi);
+  border-radius: 14px;
+  width: 340px; max-width: 90vw;
+  padding: 18px;
+  box-shadow: var(--shadow-xl);
+  animation: popIn .18s var(--ease-out);
+}
+.cal-event-popover-range {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.cal-event-popover-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  font-size: 15px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .14s;
+}
+.cal-event-popover-input:focus { border-color: var(--border-hi); }
+.cal-event-popover-input::placeholder { color: var(--text-faint); }
+.cal-event-popover-actions {
+  display: flex; justify-content: flex-end; gap: 8px;
+  margin-top: 14px;
+}
+.cal-event-popover-cancel,
+.cal-event-popover-create {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .14s, border-color .14s, transform .1s;
+}
+.cal-event-popover-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.cal-event-popover-cancel:hover { background: var(--hover); color: var(--text); }
+.cal-event-popover-create {
+  background: var(--accent-grad);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(74,144,242,.4);
+}
+.cal-event-popover-create:hover { transform: translateY(-1px); }
+.cal-event-popover-create:active,
+.cal-event-popover-cancel:active { transform: scale(.96); }
+
 /* ───────────────────── Page View ───────────────────── */
 .page-view { display: flex; flex-direction: column; min-height: 100%; animation: fadeIn .3s var(--ease-out); }
 

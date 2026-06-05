@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store';
 import type { Page } from '../types';
 
@@ -29,6 +29,14 @@ function sameDay(a: Date, b: Date): boolean {
   return dayKey(a) === dayKey(b);
 }
 
+function startOfDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0).getTime();
+}
+
+function endOfDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999).getTime();
+}
+
 interface CalendarDay {
   date: Date;
   inMonth: boolean;
@@ -37,18 +45,41 @@ interface CalendarDay {
 }
 
 export function Calendar() {
-  const { pages, visitPage, createPage } = useStore();
+  const { pages, visitPage, createEvent } = useStore();
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
 
-  // Group pages by the day they were created.
+  // Drag-to-select state: anchor is where the drag began, hover is the day under the cursor.
+  const [anchor, setAnchor] = useState<Date | null>(null);
+  const [hover, setHover] = useState<Date | null>(null);
+  const dragging = anchor !== null;
+
+  // After a selection completes we open a small popover to name the event.
+  const [draft, setDraft] = useState<{ start: Date; end: Date } | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+  const draftInputRef = useRef<HTMLInputElement>(null);
+
+  // Group pages onto each day they touch. Event pages span their [eventStart, eventEnd]
+  // range; plain pages fall back to the day they were created.
   const pagesByDay = useMemo(() => {
     const map = new Map<string, Page[]>();
-    for (const page of Object.values(pages)) {
-      const key = dayKey(new Date(page.createdAt));
+    const push = (key: string, page: Page) => {
       const list = map.get(key);
       if (list) list.push(page);
       else map.set(key, [page]);
+    };
+    for (const page of Object.values(pages)) {
+      if (page.eventStart != null && page.eventEnd != null) {
+        const d = new Date(page.eventStart);
+        const last = new Date(page.eventEnd);
+        // Walk each day in the range (cap to avoid pathological loops).
+        for (let i = 0; i < 366 && d.getTime() <= last.getTime(); i++) {
+          push(dayKey(d), page);
+          d.setDate(d.getDate() + 1);
+        }
+      } else {
+        push(dayKey(new Date(page.createdAt)), page);
+      }
     }
     for (const list of map.values()) list.sort((a, b) => a.createdAt - b.createdAt);
     return map;
@@ -80,6 +111,58 @@ export function Calendar() {
     return grid;
   }, [cursor, pagesByDay, today]);
 
+  // Selection range (normalized so start <= end), used to highlight cells while dragging.
+  const selection = useMemo(() => {
+    if (!anchor || !hover) return null;
+    const a = startOfDay(anchor);
+    const b = startOfDay(hover);
+    return { lo: Math.min(a, b), hi: Math.max(a, b) };
+  }, [anchor, hover]);
+
+  const isSelected = (d: Date) => {
+    if (!selection) return false;
+    const t = startOfDay(d);
+    return t >= selection.lo && t <= selection.hi;
+  };
+
+  // Finish a drag anywhere on the page: open the naming popover for the picked range.
+  useEffect(() => {
+    if (!dragging) return;
+    const finish = () => {
+      if (anchor && hover) {
+        const lo = startOfDay(anchor) <= startOfDay(hover) ? anchor : hover;
+        const hi = startOfDay(anchor) <= startOfDay(hover) ? hover : anchor;
+        setDraft({ start: new Date(lo), end: new Date(hi) });
+        setDraftTitle('');
+      }
+      setAnchor(null);
+      setHover(null);
+    };
+    window.addEventListener('mouseup', finish);
+    return () => window.removeEventListener('mouseup', finish);
+  }, [dragging, anchor, hover]);
+
+  // Focus the title field when the popover opens.
+  useEffect(() => {
+    if (draft) draftInputRef.current?.focus();
+  }, [draft]);
+
+  const closeDraft = () => {
+    setDraft(null);
+    setDraftTitle('');
+  };
+
+  const confirmDraft = () => {
+    if (!draft) return;
+    createEvent(startOfDay(draft.start), endOfDay(draft.end), draftTitle);
+    closeDraft();
+  };
+
+  const formatRange = (start: Date, end: Date) => {
+    const fmt = (d: Date) => `${MONTHS[d.getMonth()].slice(0, 3)} ${d.getDate()}`;
+    return sameDay(start, end) ? fmt(start) : `${fmt(start)} – ${fmt(end)}`;
+  };
+
   const goToday = () => setCursor(new Date(today.getFullYear(), today.getMonth(), 1));
   const prevMonth = () => setCursor((c) => new Date(c.getFullYear(), c.getMonth() - 1, 1));
   const nextMonth = () => setCursor((c) => new Date(c.getFullYear(), c.getMonth() + 1, 1));
@@ -102,7 +185,7 @@ export function Calendar() {
         </div>
       </div>
 
-      <div className="cal-grid">
+      <div className={`cal-grid ${dragging ? 'cal-grid--dragging' : ''}`}>
         <div className="cal-weekdays">
           {WEEKDAYS.map((w) => (
             <div key={w} className="cal-weekday">{w}</div>
@@ -115,8 +198,13 @@ export function Calendar() {
               {week.map((day) => (
                 <div
                   key={dayKey(day.date)}
-                  className={`cal-day ${day.inMonth ? '' : 'cal-day--out'} ${day.isToday ? 'cal-day--today' : ''}`}
-                  onDoubleClick={() => createPage()}
+                  className={`cal-day ${day.inMonth ? '' : 'cal-day--out'} ${day.isToday ? 'cal-day--today' : ''} ${isSelected(day.date) ? 'cal-day--selected' : ''}`}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    setAnchor(day.date);
+                    setHover(day.date);
+                  }}
+                  onMouseEnter={() => { if (dragging) setHover(day.date); }}
                 >
                   <div className="cal-day-head">
                     <span className={`cal-day-num ${day.isToday ? 'cal-day-num--today' : ''}`}>
@@ -129,6 +217,7 @@ export function Calendar() {
                         key={ev.id}
                         className="cal-event"
                         style={{ '--ev': eventColor(ev.id) } as React.CSSProperties}
+                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => { e.stopPropagation(); visitPage(ev.id); }}
                         title={ev.title || 'Untitled'}
                       >
@@ -147,6 +236,29 @@ export function Calendar() {
           ))}
         </div>
       </div>
+
+      {draft && (
+        <div className="cal-event-overlay" onMouseDown={closeDraft}>
+          <div className="cal-event-popover" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="cal-event-popover-range">{formatRange(draft.start, draft.end)}</div>
+            <input
+              ref={draftInputRef}
+              className="cal-event-popover-input"
+              placeholder="Event name…"
+              value={draftTitle}
+              onChange={(e) => setDraftTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmDraft();
+                else if (e.key === 'Escape') closeDraft();
+              }}
+            />
+            <div className="cal-event-popover-actions">
+              <button className="cal-event-popover-cancel" onClick={closeDraft}>Cancel</button>
+              <button className="cal-event-popover-create" onClick={confirmDraft}>Add event</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

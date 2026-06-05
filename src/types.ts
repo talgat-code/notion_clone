@@ -23,6 +23,10 @@ export interface Page {
   parentId?: string;
   children: string[];
   favorited: boolean;
+  // When set, this page is shown as a calendar event spanning [eventStart, eventEnd]
+  // (local-time day boundaries). Pages without these fall back to createdAt.
+  eventStart?: number;
+  eventEnd?: number;
 }
 
 export interface AppState {

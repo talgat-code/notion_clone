@@ -143,6 +143,7 @@ function newPage(title = 'Untitled', parentId?: string): Page {
 
 interface Store extends AppState {
   createPage: (parentId?: string) => string;
+  createEvent: (start: number, end: number, title: string) => string;
   createFromTemplate: (tpl: PageTemplate) => string;
   deletePage: (id: string) => void;
   visitPage: (id: string) => void;
@@ -187,6 +188,27 @@ export const useStore = create<Store>()(
             rootPages: [...s.rootPages, page.id],
             activePage: page.id,
             view: 'page',
+            recentPages,
+          };
+        });
+        return page.id;
+      },
+
+      createEvent(start, end, title) {
+        const trimmed = title.trim();
+        const page: Page = {
+          ...newPage(trimmed || 'Untitled'),
+          icon: '📅',
+          eventStart: start,
+          eventEnd: end,
+          // Anchor createdAt to the event's first day so it still sorts sensibly.
+          createdAt: start,
+        };
+        set((s) => {
+          const recentPages = [page.id, ...s.recentPages.filter((id) => id !== page.id)].slice(0, 10);
+          return {
+            pages: { ...s.pages, [page.id]: page },
+            rootPages: [...s.rootPages, page.id],
             recentPages,
           };
         });
