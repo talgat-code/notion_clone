@@ -72,7 +72,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSearch }: SidebarProps) {
-  const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, visitPage } = useStore();
+  const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, goHabits, visitPage } = useStore();
   const user = useCurrentUser();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -116,6 +116,13 @@ export function Sidebar({ onSearch }: SidebarProps) {
         >
           <span className="nav-icon">📅</span>
           Calendar
+        </button>
+        <button
+          className={`nav-item ${view === 'habits' ? 'nav-item--active' : ''}`}
+          onClick={goHabits}
+        >
+          <span className="nav-icon">✅</span>
+          Habits
         </button>
         <button className="nav-item">
           <span className="nav-icon">📥</span>

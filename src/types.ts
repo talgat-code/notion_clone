@@ -29,10 +29,22 @@ export interface Page {
   eventEnd?: number;
 }
 
+export interface Habit {
+  id: string;
+  name: string;
+  emoji: string;
+}
+
 export interface AppState {
   pages: Record<string, Page>;
   rootPages: string[];
   activePage: string | null;
-  view: 'home' | 'page' | 'calendar';
+  view: 'home' | 'page' | 'calendar' | 'habits';
   recentPages: string[];
+  // Habit tracker
+  habits: Habit[];
+  // Completion log, keyed by `${dayKey}__${habitId}` → true.
+  habitLog: Record<string, boolean>;
+  // Free-text note per day, keyed by dayKey.
+  habitNotes: Record<string, string>;
 }

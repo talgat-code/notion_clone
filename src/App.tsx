@@ -4,6 +4,7 @@ import { Header } from './components/Header';
 import { HomePage } from './components/HomePage';
 import { PageView } from './components/PageView';
 import { Calendar } from './components/Calendar';
+import { Habits } from './components/Habits';
 import { SearchModal } from './components/SearchModal';
 import { AuthScreen } from './components/AuthScreen';
 import { useStore } from './store';
@@ -47,6 +48,8 @@ export default function App() {
             <HomePage />
           ) : view === 'calendar' ? (
             <Calendar />
+          ) : view === 'habits' ? (
+            <Habits />
           ) : activePage ? (
             <PageView pageId={activePage} />
           ) : (

@@ -1,6 +1,20 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppState, Block, BlockType, Page } from './types';
+import type { AppState, Block, BlockType, Habit, Page } from './types';
+
+// Default habits seeded for new workspaces.
+const DEFAULT_HABITS: Habit[] = [
+  { id: 'h-sleep', name: 'Sleep 7-8 hours', emoji: '🛏️' },
+  { id: 'h-meals', name: 'Eat healthy meals', emoji: '🍽️' },
+  { id: 'h-social', name: 'Social media ≤ 90min', emoji: '📱' },
+  { id: 'h-clean', name: 'No porn/alcohol', emoji: '🚫' },
+  { id: 'h-water', name: 'Drink 2L water', emoji: '💧' },
+  { id: 'h-study', name: 'Study ≥ 2 hours', emoji: '📖' },
+  { id: 'h-exercise', name: 'Exercise 30 minutes', emoji: '🤸' },
+  { id: 'h-read', name: 'Read 30 minutes', emoji: '📚' },
+  { id: 'h-journal', name: 'Journal & self-reflect', emoji: '✍️' },
+  { id: 'h-plan', name: "Plan tomorrow's tasks", emoji: '📋' },
+];
 
 export const COVERS = [
   'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -149,6 +163,12 @@ interface Store extends AppState {
   visitPage: (id: string) => void;
   goHome: () => void;
   goCalendar: () => void;
+  goHabits: () => void;
+  addHabit: (name: string, emoji: string) => void;
+  updateHabit: (id: string, name: string, emoji: string) => void;
+  removeHabit: (id: string) => void;
+  toggleHabit: (dayKey: string, habitId: string) => void;
+  setHabitNote: (dayKey: string, note: string) => void;
   updatePageTitle: (id: string, title: string) => void;
   updatePageIcon: (id: string, icon: string) => void;
   updatePageCover: (id: string, cover: string) => void;
@@ -170,6 +190,9 @@ export const useStore = create<Store>()(
       activePage: null,
       view: 'home' as const,
       recentPages: [],
+      habits: DEFAULT_HABITS,
+      habitLog: {},
+      habitNotes: {},
 
       createPage(parentId) {
         const page = newPage('Untitled', parentId);
@@ -288,6 +311,52 @@ export const useStore = create<Store>()(
 
       goCalendar() {
         set({ view: 'calendar' });
+      },
+
+      goHabits() {
+        set({ view: 'habits' });
+      },
+
+      addHabit(name, emoji) {
+        const habit: Habit = { id: uid(), name: name.trim() || 'New habit', emoji: emoji || '✅' };
+        set((s) => ({ habits: [...s.habits, habit] }));
+      },
+
+      updateHabit(id, name, emoji) {
+        set((s) => ({
+          habits: s.habits.map((h) =>
+            h.id === id ? { ...h, name: name.trim() || h.name, emoji: emoji || h.emoji } : h
+          ),
+        }));
+      },
+
+      removeHabit(id) {
+        set((s) => {
+          const habitLog = { ...s.habitLog };
+          for (const key of Object.keys(habitLog)) {
+            if (key.endsWith(`__${id}`)) delete habitLog[key];
+          }
+          return { habits: s.habits.filter((h) => h.id !== id), habitLog };
+        });
+      },
+
+      toggleHabit(dayKey, habitId) {
+        set((s) => {
+          const key = `${dayKey}__${habitId}`;
+          const habitLog = { ...s.habitLog };
+          if (habitLog[key]) delete habitLog[key];
+          else habitLog[key] = true;
+          return { habitLog };
+        });
+      },
+
+      setHabitNote(dayKey, note) {
+        set((s) => {
+          const habitNotes = { ...s.habitNotes };
+          if (note.trim()) habitNotes[dayKey] = note;
+          else delete habitNotes[dayKey];
+          return { habitNotes };
+        });
       },
 
       updatePageTitle(id, title) {
