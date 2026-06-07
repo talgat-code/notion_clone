@@ -11,11 +11,19 @@ export interface Block {
   calloutEmoji?: string;
 }
 
+// A page is the default document; folders and projects are colored containers
+// that primarily exist to organize child pages in the sidebar tree.
+export type PageKind = 'page' | 'folder' | 'project';
+
 export interface Page {
   id: string;
   title: string;
   icon: string;
   cover: string;
+  // 'page' when omitted (older persisted workspaces predate this field).
+  kind?: PageKind;
+  // Accent color (hex) for folders/projects. Falls back to the theme accent.
+  color?: string;
   blocks: Block[];
   createdAt: number;
   updatedAt: number;

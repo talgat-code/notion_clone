@@ -28,6 +28,17 @@
   --accent-dim:  rgba(47,125,225,.14);
   --accent-grad: linear-gradient(135deg, #4a90f2 0%, #7b6cf0 100%);
 
+  /* Color palette — shared by folders, projects & accents */
+  --c-blue:      #2f7de1;
+  --c-purple:    #7b6cf0;
+  --c-pink:      #e255a1;
+  --c-red:       #e0584f;
+  --c-orange:    #e8833d;
+  --c-gold:      #e0a92e;
+  --c-green:     #3da35d;
+  --c-teal:      #1facbb;
+  --c-gray:      #8d8c88;
+
   --red:         #e0584f;
   --gold:        #e8a33d;
 
@@ -72,9 +83,10 @@ body::before {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(1200px 660px at 82% -12%, rgba(123,108,240,.09), transparent 60%),
-    radial-gradient(1000px 580px at 3% 112%, rgba(74,144,242,.08), transparent 55%),
-    radial-gradient(700px 700px at 50% 50%, rgba(232,163,61,.025), transparent 70%);
+    radial-gradient(1200px 660px at 82% -12%, rgba(123,108,240,.12), transparent 60%),
+    radial-gradient(1000px 580px at 3% 112%, rgba(74,144,242,.10), transparent 55%),
+    radial-gradient(820px 620px at 100% 60%, rgba(226,85,161,.06), transparent 60%),
+    radial-gradient(700px 700px at 50% 50%, rgba(232,163,61,.035), transparent 70%);
 }
 
 button { font-family: var(--font); }

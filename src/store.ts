@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppState, Block, BlockType, Habit, Page } from './types';
+import type { AppState, Block, BlockType, Habit, Page, PageKind } from './types';
 
 // Default habits seeded for new workspaces.
 const DEFAULT_HABITS: Habit[] = [
@@ -30,6 +30,32 @@ export const COVERS = [
 ];
 
 const EMOJIS = ['📄','📝','📌','🗒️','💡','🎯','📚','🔖','✨','🗂️','🏠','🌟','🔥','💎','🚀'];
+
+// Accent palette shared by folders, projects and the color picker.
+export interface PageColor {
+  key: string;
+  name: string;
+  value: string;
+}
+
+export const PAGE_COLORS: PageColor[] = [
+  { key: 'blue',   name: 'Blue',   value: '#2f7de1' },
+  { key: 'purple', name: 'Purple', value: '#7b6cf0' },
+  { key: 'pink',   name: 'Pink',   value: '#e255a1' },
+  { key: 'red',    name: 'Red',    value: '#e0584f' },
+  { key: 'orange', name: 'Orange', value: '#e8833d' },
+  { key: 'yellow', name: 'Gold',   value: '#e0a92e' },
+  { key: 'green',  name: 'Green',  value: '#3da35d' },
+  { key: 'teal',   name: 'Teal',   value: '#1facbb' },
+  { key: 'gray',   name: 'Gray',   value: '#8d8c88' },
+];
+
+// Defaults applied when a new container is created.
+const KIND_DEFAULTS: Record<PageKind, { icon: string; title: string; color?: string }> = {
+  page:    { icon: '📄', title: 'Untitled' },
+  folder:  { icon: '📁', title: 'New folder',  color: '#2f7de1' },
+  project: { icon: '🚀', title: 'New project', color: '#7b6cf0' },
+};
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
@@ -139,12 +165,17 @@ export const TEMPLATES: PageTemplate[] = [
   },
 ];
 
-function newPage(title = 'Untitled', parentId?: string): Page {
+function newPage(title = 'Untitled', parentId?: string, kind: PageKind = 'page'): Page {
+  const defaults = KIND_DEFAULTS[kind];
   return {
     id: uid(),
-    title,
-    icon: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+    title: title ?? defaults.title,
+    icon: kind === 'page'
+      ? EMOJIS[Math.floor(Math.random() * EMOJIS.length)]
+      : defaults.icon,
     cover: '',
+    kind,
+    color: defaults.color,
     blocks: [{ id: uid(), type: 'text', content: '' }],
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -156,7 +187,7 @@ function newPage(title = 'Untitled', parentId?: string): Page {
 }
 
 interface Store extends AppState {
-  createPage: (parentId?: string) => string;
+  createPage: (parentId?: string, kind?: PageKind) => string;
   createEvent: (start: number, end: number, title: string) => string;
   createFromTemplate: (tpl: PageTemplate) => string;
   deletePage: (id: string) => void;
@@ -172,6 +203,7 @@ interface Store extends AppState {
   updatePageTitle: (id: string, title: string) => void;
   updatePageIcon: (id: string, icon: string) => void;
   updatePageCover: (id: string, cover: string) => void;
+  updatePageColor: (id: string, color: string) => void;
   toggleFavorite: (id: string) => void;
   duplicatePage: (id: string) => string;
   addBlock: (pageId: string, afterId: string, type?: BlockType) => string;
@@ -194,8 +226,8 @@ export const useStore = create<Store>()(
       habitLog: {},
       habitNotes: {},
 
-      createPage(parentId) {
-        const page = newPage('Untitled', parentId);
+      createPage(parentId, kind = 'page') {
+        const page = newPage(KIND_DEFAULTS[kind].title, parentId, kind);
         set((s) => {
           const pages = { ...s.pages, [page.id]: page };
           const recentPages = [page.id, ...s.recentPages.filter((id) => id !== page.id)].slice(0, 10);
@@ -374,6 +406,12 @@ export const useStore = create<Store>()(
       updatePageCover(id, cover) {
         set((s) => ({
           pages: { ...s.pages, [id]: { ...s.pages[id], cover, updatedAt: Date.now() } },
+        }));
+      },
+
+      updatePageColor(id, color) {
+        set((s) => ({
+          pages: { ...s.pages, [id]: { ...s.pages[id], color, updatedAt: Date.now() } },
         }));
       },
 

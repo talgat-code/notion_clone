@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { useStore, COVERS } from '../store';
+import { useStore, COVERS, PAGE_COLORS } from '../store';
+import type { PageKind } from '../types';
 import { BlockEditor } from './BlockEditor';
 
 const EMOJIS = [
@@ -9,9 +10,10 @@ const EMOJIS = [
 ];
 
 export function PageView({ pageId }: { pageId: string }) {
-  const { pages, updatePageTitle, updatePageIcon, updatePageCover } = useStore();
+  const { pages, updatePageTitle, updatePageIcon, updatePageCover, updatePageColor, createPage, visitPage } = useStore();
   const [showEmoji, setShowEmoji] = useState(false);
   const [showCoverPicker, setShowCoverPicker] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const page = pages[pageId];
 
@@ -22,6 +24,7 @@ export function PageView({ pageId }: { pageId: string }) {
     }
     setShowEmoji(false);
     setShowCoverPicker(false);
+    setShowColorPicker(false);
   }, [pageId]);
 
   if (!page) {
@@ -38,9 +41,16 @@ export function PageView({ pageId }: { pageId: string }) {
   }
 
   const hasCover = Boolean(page.cover);
+  const kind: PageKind = page.kind ?? 'page';
+  const isContainer = kind !== 'page';
+  const accent = page.color;
+  const children = page.children.map((id) => pages[id]).filter(Boolean);
 
   return (
-    <div className="page-view">
+    <div
+      className="page-view"
+      style={accent ? ({ '--page-accent': accent } as React.CSSProperties) : undefined}
+    >
       {/* ── Cover ── */}
       <div className={`page-cover-wrap ${!hasCover ? 'page-cover-wrap--empty' : ''}`}>
         {hasCover && (
@@ -83,6 +93,41 @@ export function PageView({ pageId }: { pageId: string }) {
 
       {/* ── Content ── */}
       <div className="page-content">
+        {/* Kind badge + color picker (folders & projects) */}
+        {isContainer && (
+          <div className="page-kind-bar">
+            <span
+              className="page-kind-badge"
+              style={accent ? { background: `${accent}1f`, color: accent } : undefined}
+            >
+              {kind === 'folder' ? '📁 Folder' : '🚀 Project'}
+            </span>
+            <div className="page-color-wrap">
+              <button
+                className="page-color-btn"
+                onClick={() => setShowColorPicker((v) => !v)}
+                title="Change color"
+              >
+                <span className="page-color-dot" style={{ background: accent }} />
+                Color
+              </button>
+              {showColorPicker && (
+                <div className="page-color-picker" onMouseLeave={() => setShowColorPicker(false)}>
+                  {PAGE_COLORS.map((c) => (
+                    <button
+                      key={c.key}
+                      title={c.name}
+                      className={`page-color-swatch ${accent === c.value ? 'is-active' : ''}`}
+                      style={{ background: c.value }}
+                      onClick={() => { updatePageColor(pageId, c.value); setShowColorPicker(false); }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Icon */}
         <div className="page-icon-row">
           <button className="page-icon-btn" onClick={() => setShowEmoji((v) => !v)}>
@@ -123,6 +168,42 @@ export function PageView({ pageId }: { pageId: string }) {
             weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
           })}
         </div>
+
+        {/* Sub-pages inside a folder / project */}
+        {isContainer && (
+          <section className="subpages">
+            <div className="subpages-head">
+              <span className="subpages-title">Inside this {kind}</span>
+              <div className="subpages-add">
+                <button onClick={() => visitPage(createPage(pageId, 'page'))}>+ Page</button>
+                <button onClick={() => createPage(pageId, 'folder')}>+ Folder</button>
+                <button onClick={() => createPage(pageId, 'project')}>+ Project</button>
+              </div>
+            </div>
+            {children.length > 0 ? (
+              <div className="subpages-grid">
+                {children.map((child) => (
+                  <button
+                    key={child.id}
+                    className="subpage-card"
+                    style={child.color ? { '--card-accent': child.color } as React.CSSProperties : undefined}
+                    onClick={() => visitPage(child.id)}
+                  >
+                    <span className="subpage-card-icon">{child.icon}</span>
+                    <span className="subpage-card-title">{child.title || 'Untitled'}</span>
+                    {child.kind && child.kind !== 'page' && (
+                      <span className="subpage-card-kind">{child.kind}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="subpages-empty">
+                Nothing here yet — add a page, folder or project above.
+              </div>
+            )}
+          </section>
+        )}
 
         <BlockEditor pageId={pageId} />
       </div>

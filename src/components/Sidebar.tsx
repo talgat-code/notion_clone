@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store';
 import { useCurrentUser } from '../auth';
 import { ProfileModal } from './ProfileModal';
+import type { PageKind } from '../types';
 
 interface PageTreeItemProps {
   pageId: string;
@@ -15,23 +16,39 @@ function PageTreeItem({ pageId, depth = 0 }: PageTreeItemProps) {
   const page = pages[pageId];
   if (!page) return null;
 
+  const kind = page.kind ?? 'page';
+  const isContainer = kind !== 'page';
   const isActive = activePage === pageId && view === 'page';
   const hasChildren = page.children.length > 0;
+  const accent = page.color;
+
+  // Folders behave like pure containers — clicking toggles their contents.
+  const handleOpen = () => {
+    if (kind === 'folder') setExpanded((v) => !v);
+    else visitPage(pageId);
+  };
 
   return (
     <div className="tree-item-wrapper">
       <div
         className={`tree-item ${isActive ? 'tree-item--active' : ''}`}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{
+          paddingLeft: `${8 + depth * 14}px`,
+          ...(accent ? ({ '--row-accent': accent } as React.CSSProperties) : {}),
+        }}
       >
         <button
           className="tree-expand"
           onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
         >
-          {hasChildren ? (expanded ? '▾' : '▸') : ''}
+          {hasChildren || isContainer ? (expanded ? '▾' : '▸') : ''}
         </button>
-        <button className="tree-main" onClick={() => visitPage(pageId)}>
-          <span className="tree-icon">{page.icon}</span>
+        <button className="tree-main" onClick={handleOpen}>
+          <span className={`tree-icon ${isContainer ? 'tree-icon--chip' : ''}`}
+            style={isContainer && accent ? { background: `${accent}22`, boxShadow: `inset 0 0 0 1px ${accent}40` } : undefined}
+          >
+            {page.icon}
+          </span>
           <span className="tree-title">{page.title || 'Untitled'}</span>
           {page.favorited && <span className="tree-fav">⭐</span>}
         </button>
@@ -42,15 +59,25 @@ function PageTreeItem({ pageId, depth = 0 }: PageTreeItemProps) {
           >
             ···
           </button>
-          <button title="Add sub-page" onClick={(e) => { e.stopPropagation(); createPage(pageId); }}>
+          <button
+            title="Add inside"
+            onClick={(e) => { e.stopPropagation(); createPage(pageId); setExpanded(true); }}
+          >
             +
           </button>
         </div>
         {showMenu && (
           <div className="tree-menu" onMouseLeave={() => setShowMenu(false)}>
-            <button onClick={() => { createPage(pageId); setShowMenu(false); }}>
-              + Add sub-page
+            <button onClick={() => { createPage(pageId, 'page'); setExpanded(true); setShowMenu(false); }}>
+              📄 Add page
             </button>
+            <button onClick={() => { createPage(pageId, 'folder'); setExpanded(true); setShowMenu(false); }}>
+              📁 Add folder
+            </button>
+            <button onClick={() => { createPage(pageId, 'project'); setExpanded(true); setShowMenu(false); }}>
+              🚀 Add project
+            </button>
+            <div className="tree-menu-sep" />
             <button onClick={() => { duplicatePage(pageId); setShowMenu(false); }}>
               ⎘ Duplicate
             </button>
@@ -60,12 +87,23 @@ function PageTreeItem({ pageId, depth = 0 }: PageTreeItemProps) {
           </div>
         )}
       </div>
-      {expanded && hasChildren && page.children.map((childId) => (
+      {expanded && page.children.map((childId) => (
         <PageTreeItem key={childId} pageId={childId} depth={depth + 1} />
       ))}
+      {expanded && isContainer && !hasChildren && (
+        <div className="tree-empty" style={{ paddingLeft: `${8 + (depth + 1) * 14 + 22}px` }}>
+          Empty — use + to add
+        </div>
+      )}
     </div>
   );
 }
+
+const NEW_OPTIONS: Array<{ kind: PageKind; icon: string; label: string }> = [
+  { kind: 'page', icon: '📄', label: 'Page' },
+  { kind: 'folder', icon: '📁', label: 'Folder' },
+  { kind: 'project', icon: '🚀', label: 'Project' },
+];
 
 interface SidebarProps {
   onSearch: () => void;
@@ -75,6 +113,7 @@ export function Sidebar({ onSearch }: SidebarProps) {
   const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, goHabits, visitPage } = useStore();
   const user = useCurrentUser();
   const [showProfile, setShowProfile] = useState(false);
+  const [showNewMenu, setShowNewMenu] = useState(false);
 
   const favorites = Object.values(pages).filter((p) => p.favorited);
   const initial = (user?.name.trim()[0] || '?').toUpperCase();
@@ -155,7 +194,7 @@ export function Sidebar({ onSearch }: SidebarProps) {
 
         {/* Pages */}
         <div className="sidebar-section">
-          <div className="sidebar-section-label">Pages</div>
+          <div className="sidebar-section-label">Workspace</div>
           {rootPages.map((id) => (
             <PageTreeItem key={id} pageId={id} />
           ))}
@@ -167,9 +206,34 @@ export function Sidebar({ onSearch }: SidebarProps) {
         </div>
       </div>
 
-      <button className="sidebar-new-page" onClick={() => createPage()}>
-        <span>+</span> New page
-      </button>
+      {/* New page / folder / project */}
+      <div className="sidebar-new-wrap">
+        {showNewMenu && (
+          <div className="sidebar-new-menu" onMouseLeave={() => setShowNewMenu(false)}>
+            {NEW_OPTIONS.map((opt) => (
+              <button
+                key={opt.kind}
+                onClick={() => { createPage(undefined, opt.kind); setShowNewMenu(false); }}
+              >
+                <span className="sidebar-new-menu-icon">{opt.icon}</span>
+                New {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="sidebar-new-page">
+          <button className="sidebar-new-main" onClick={() => createPage()}>
+            <span>+</span> New page
+          </button>
+          <button
+            className="sidebar-new-caret"
+            title="Create folder or project"
+            onClick={() => setShowNewMenu((v) => !v)}
+          >
+            ⌄
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }
