@@ -1521,6 +1521,20 @@ th.ht-habit { font-size: 16px; min-width: 42px; text-align: center; }
 .slash-menu-label { font-size: 14px; color: var(--text); font-weight: 550; }
 .slash-menu-desc  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 
+.slash-menu-section {
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text-faint);
+  padding: 9px 10px 4px;
+  margin-top: 3px;
+  border-top: 1px solid var(--border);
+}
+.slash-menu-icon--snippet {
+  background: var(--accent-dim);
+  border-color: transparent;
+  font-size: 17px;
+}
+
 /* ───────────────────── Search Modal ───────────────────── */
 .search-overlay {
   position: fixed; inset: 0;

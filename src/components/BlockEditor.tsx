@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, memo, type KeyboardEvent } from 'react';
 import type { Block, BlockType } from '../types';
-import { useStore } from '../store';
+import { useStore, SNIPPETS } from '../store';
 
 const TYPE_TRIGGERS: Record<string, BlockType> = {
   '# ':   'h1',
@@ -27,19 +27,34 @@ const PLACEHOLDER: Record<BlockType, string> = {
   code:     'Write code…',
 };
 
-const MENU_ITEMS = [
-  { type: 'text'    as BlockType, icon: '¶',  label: 'Text',          desc: 'Start with plain text' },
-  { type: 'h1'      as BlockType, icon: 'H1', label: 'Heading 1',     desc: 'Big section heading' },
-  { type: 'h2'      as BlockType, icon: 'H2', label: 'Heading 2',     desc: 'Medium section heading' },
-  { type: 'h3'      as BlockType, icon: 'H3', label: 'Heading 3',     desc: 'Small section heading' },
-  { type: 'bullet'  as BlockType, icon: '•',  label: 'Bullet list',   desc: 'Unordered list' },
-  { type: 'numbered'as BlockType, icon: '1.', label: 'Numbered list', desc: 'Ordered list' },
-  { type: 'todo'    as BlockType, icon: '☐',  label: 'To-do',         desc: 'Trackable checkbox' },
-  { type: 'quote'   as BlockType, icon: '"',  label: 'Quote',         desc: 'Capture a quote' },
-  { type: 'callout' as BlockType, icon: '💡', label: 'Callout',       desc: 'Highlighted callout box' },
-  { type: 'code'    as BlockType, icon: '<>', label: 'Code',           desc: 'Code block' },
-  { type: 'divider' as BlockType, icon: '—',  label: 'Divider',       desc: 'Visual separator' },
+type MenuItem =
+  | { kind: 'block'; key: string; type: BlockType; icon: string; label: string; desc: string; keywords?: string[] }
+  | { kind: 'snippet'; key: string; icon: string; label: string; desc: string; keywords: string[] };
+
+const BLOCK_ITEMS: MenuItem[] = [
+  { kind: 'block', key: 'text',     type: 'text',     icon: '¶',  label: 'Text',          desc: 'Start with plain text' },
+  { kind: 'block', key: 'h1',       type: 'h1',       icon: 'H1', label: 'Heading 1',     desc: 'Big section heading' },
+  { kind: 'block', key: 'h2',       type: 'h2',       icon: 'H2', label: 'Heading 2',     desc: 'Medium section heading' },
+  { kind: 'block', key: 'h3',       type: 'h3',       icon: 'H3', label: 'Heading 3',     desc: 'Small section heading' },
+  { kind: 'block', key: 'bullet',   type: 'bullet',   icon: '•',  label: 'Bullet list',   desc: 'Unordered list' },
+  { kind: 'block', key: 'numbered', type: 'numbered', icon: '1.', label: 'Numbered list', desc: 'Ordered list' },
+  { kind: 'block', key: 'todo',     type: 'todo',     icon: '☐',  label: 'To-do',         desc: 'Trackable checkbox' },
+  { kind: 'block', key: 'quote',    type: 'quote',    icon: '"',  label: 'Quote',         desc: 'Capture a quote' },
+  { kind: 'block', key: 'callout',  type: 'callout',  icon: '💡', label: 'Callout',       desc: 'Highlighted callout box' },
+  { kind: 'block', key: 'code',     type: 'code',     icon: '<>', label: 'Code',          desc: 'Code block' },
+  { kind: 'block', key: 'divider',  type: 'divider',  icon: '—',  label: 'Divider',       desc: 'Visual separator' },
 ];
+
+const SNIPPET_ITEMS: MenuItem[] = SNIPPETS.map((s) => ({
+  kind: 'snippet',
+  key: s.key,
+  icon: s.icon,
+  label: s.label,
+  desc: s.desc,
+  keywords: s.keywords,
+}));
+
+const MENU_ITEMS: MenuItem[] = [...BLOCK_ITEMS, ...SNIPPET_ITEMS];
 
 interface BlockItemProps {
   block: Block;
@@ -58,7 +73,7 @@ const BlockItem = memo(function BlockItem({
   focusBlock,
   focusPrevBlock,
 }: BlockItemProps) {
-  const { addBlock, updateBlock, deleteBlock, toggleTodo, changeBlockType, moveBlock } = useStore();
+  const { addBlock, updateBlock, deleteBlock, toggleTodo, changeBlockType, moveBlock, insertSnippet } = useStore();
 
   const inputRef = useRef<HTMLDivElement>(null);
   const prevTypeRef = useRef(block.type);
@@ -126,7 +141,7 @@ const BlockItem = memo(function BlockItem({
     if (showMenu) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setMenuIdx((i) => Math.min(i + 1, filtered.length - 1)); return; }
       if (e.key === 'ArrowUp')   { e.preventDefault(); setMenuIdx((i) => Math.max(i - 1, 0)); return; }
-      if (e.key === 'Enter')     { e.preventDefault(); if (filtered[menuIdx]) selectType(filtered[menuIdx].type); return; }
+      if (e.key === 'Enter')     { e.preventDefault(); if (filtered[menuIdx]) selectItem(filtered[menuIdx]); return; }
       if (e.key === 'Escape')    { setShowMenu(false); return; }
     }
 
@@ -157,11 +172,22 @@ const BlockItem = memo(function BlockItem({
     if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); moveBlock(pageId, block.id, 'down'); }
   }
 
-  function selectType(type: BlockType) {
+  function selectItem(item: MenuItem) {
     const cur = inputRef.current?.innerText ?? '';
     const slashIdx = cur.lastIndexOf('/');
     const newContent = slashIdx >= 0 ? cur.slice(0, slashIdx) : cur;
-    changeBlockType(pageId, block.id, type);
+
+    if (item.kind === 'snippet') {
+      // Clear the trigger text, then drop the snippet's blocks into the page.
+      updateBlock(pageId, block.id, newContent);
+      if (inputRef.current) inputRef.current.innerText = newContent;
+      setShowMenu(false);
+      setMenuFilter('');
+      insertSnippet(pageId, block.id, item.key);
+      return;
+    }
+
+    changeBlockType(pageId, block.id, item.type);
     updateBlock(pageId, block.id, newContent);
     if (inputRef.current) inputRef.current.innerText = newContent;
     setShowMenu(false);
@@ -172,7 +198,10 @@ const BlockItem = memo(function BlockItem({
   function getFiltered() {
     if (!menuFilter) return MENU_ITEMS;
     return MENU_ITEMS.filter(
-      (m) => m.label.toLowerCase().includes(menuFilter) || m.type.includes(menuFilter)
+      (m) =>
+        m.label.toLowerCase().includes(menuFilter) ||
+        m.key.includes(menuFilter) ||
+        m.keywords?.some((k) => k.includes(menuFilter))
     );
   }
 
@@ -199,7 +228,7 @@ const BlockItem = memo(function BlockItem({
             onKeyDown={handleKeyDown}
           />
         </div>
-        {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectType} />}
+        {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectItem} />}
       </div>
     );
   }
@@ -220,7 +249,7 @@ const BlockItem = memo(function BlockItem({
             onKeyDown={handleKeyDown}
           />
         </div>
-        {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectType} />}
+        {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectItem} />}
       </div>
     );
   }
@@ -248,7 +277,7 @@ const BlockItem = memo(function BlockItem({
         onInput={handleInput}
         onKeyDown={handleKeyDown}
       />
-      {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectType} />}
+      {showMenu && filtered.length > 0 && <SlashMenu items={filtered} selected={menuIdx} onSelect={selectItem} />}
     </div>
   );
 });
@@ -258,31 +287,38 @@ function SlashMenu({
   selected,
   onSelect,
 }: {
-  items: typeof MENU_ITEMS;
+  items: MenuItem[];
   selected: number;
-  onSelect: (type: BlockType) => void;
+  onSelect: (item: MenuItem) => void;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const el = listRef.current?.children[selected] as HTMLElement;
+    const el = listRef.current?.querySelector(`[data-idx="${selected}"]`) as HTMLElement;
     el?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
+
+  const firstSnippet = items.findIndex((m) => m.kind === 'snippet');
 
   return (
     <div className="slash-menu" ref={listRef}>
       {items.map((item, i) => (
-        <button
-          key={item.type}
-          className={`slash-menu-item ${i === selected ? 'slash-menu-item--selected' : ''}`}
-          onMouseDown={(e) => { e.preventDefault(); onSelect(item.type); }}
-        >
-          <span className="slash-menu-icon">{item.icon}</span>
-          <div>
-            <div className="slash-menu-label">{item.label}</div>
-            <div className="slash-menu-desc">{item.desc}</div>
-          </div>
-        </button>
+        <div key={item.kind + item.key}>
+          {i === firstSnippet && <div className="slash-menu-section">Templates</div>}
+          <button
+            data-idx={i}
+            className={`slash-menu-item ${i === selected ? 'slash-menu-item--selected' : ''}`}
+            onMouseDown={(e) => { e.preventDefault(); onSelect(item); }}
+          >
+            <span className={`slash-menu-icon ${item.kind === 'snippet' ? 'slash-menu-icon--snippet' : ''}`}>
+              {item.icon}
+            </span>
+            <div>
+              <div className="slash-menu-label">{item.label}</div>
+              <div className="slash-menu-desc">{item.desc}</div>
+            </div>
+          </button>
+        </div>
       ))}
     </div>
   );

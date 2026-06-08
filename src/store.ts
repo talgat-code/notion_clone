@@ -165,6 +165,113 @@ export const TEMPLATES: PageTemplate[] = [
   },
 ];
 
+// Block snippets inserted inline via the slash menu (e.g. type "/finance").
+// Unlike TEMPLATES (which spawn a whole new page) these drop a ready-made
+// block structure into the page you're already editing.
+export interface Snippet {
+  key: string;
+  label: string;
+  desc: string;
+  icon: string;
+  // Applied to the page title/icon when the page is still untitled.
+  title: string;
+  keywords: string[];
+  blocks: Array<Omit<Block, 'id'>>;
+}
+
+export const SNIPPETS: Snippet[] = [
+  {
+    key: 'finance',
+    label: 'Finance tracker',
+    desc: 'Income, expenses & savings',
+    icon: '💰',
+    title: 'Finance Tracker',
+    keywords: ['finance', 'money', 'budget', 'expenses', 'tracker'],
+    blocks: [
+      { type: 'h1', content: '💰 Finance Tracker' },
+      { type: 'callout', content: 'Monthly budget overview — update the amounts as you go.', calloutEmoji: '📊' },
+      { type: 'h2', content: 'Income' },
+      { type: 'bullet', content: 'Salary — $' },
+      { type: 'bullet', content: 'Side income — $' },
+      { type: 'h2', content: 'Expenses' },
+      { type: 'todo', content: 'Rent / mortgage — $', checked: false },
+      { type: 'todo', content: 'Groceries — $', checked: false },
+      { type: 'todo', content: 'Utilities — $', checked: false },
+      { type: 'todo', content: 'Subscriptions — $', checked: false },
+      { type: 'todo', content: 'Transport — $', checked: false },
+      { type: 'h2', content: 'Savings & Goals' },
+      { type: 'bullet', content: 'Emergency fund — $ / $' },
+      { type: 'bullet', content: 'Investments — $' },
+      { type: 'quote', content: 'Pay yourself first.' },
+    ],
+  },
+  {
+    key: 'todo',
+    label: 'To-do list',
+    desc: 'Tasks for today & later',
+    icon: '✅',
+    title: 'To-do list',
+    keywords: ['todo', 'task', 'tasks', 'checklist', 'to-do'],
+    blocks: [
+      { type: 'h2', content: 'Today' },
+      { type: 'todo', content: '', checked: false },
+      { type: 'todo', content: '', checked: false },
+      { type: 'h2', content: 'Later' },
+      { type: 'todo', content: '', checked: false },
+    ],
+  },
+  {
+    key: 'meeting',
+    label: 'Meeting notes',
+    desc: 'Agenda & action items',
+    icon: '📅',
+    title: 'Meeting notes',
+    keywords: ['meeting', 'notes', 'agenda', 'standup', 'sync'],
+    blocks: [
+      { type: 'callout', content: 'Date · Attendees · Goal', calloutEmoji: '📌' },
+      { type: 'h2', content: 'Agenda' },
+      { type: 'bullet', content: '' },
+      { type: 'h2', content: 'Notes' },
+      { type: 'text', content: '' },
+      { type: 'h2', content: 'Action items' },
+      { type: 'todo', content: '', checked: false },
+    ],
+  },
+  {
+    key: 'habits',
+    label: 'Weekly habits',
+    desc: 'Checklist to build streaks',
+    icon: '🔥',
+    title: 'Weekly Habits',
+    keywords: ['habit', 'habits', 'routine', 'streak', 'weekly'],
+    blocks: [
+      { type: 'h1', content: '🔥 Weekly Habits' },
+      { type: 'todo', content: 'Drink 2L of water', checked: false },
+      { type: 'todo', content: 'Exercise 30 minutes', checked: false },
+      { type: 'todo', content: 'Read 30 minutes', checked: false },
+      { type: 'todo', content: 'Sleep 7-8 hours', checked: false },
+      { type: 'todo', content: 'No social media before noon', checked: false },
+    ],
+  },
+  {
+    key: 'goals',
+    label: 'Goals & OKRs',
+    desc: 'Objectives and key results',
+    icon: '🎯',
+    title: 'Goals',
+    keywords: ['goal', 'goals', 'okr', 'objective', 'plan'],
+    blocks: [
+      { type: 'h1', content: '🎯 Goals' },
+      { type: 'h2', content: 'Objective' },
+      { type: 'quote', content: 'What do you want to achieve?' },
+      { type: 'h2', content: 'Key results' },
+      { type: 'todo', content: 'Result 1', checked: false },
+      { type: 'todo', content: 'Result 2', checked: false },
+      { type: 'todo', content: 'Result 3', checked: false },
+    ],
+  },
+];
+
 function newPage(title = 'Untitled', parentId?: string, kind: PageKind = 'page'): Page {
   const defaults = KIND_DEFAULTS[kind];
   return {
@@ -207,6 +314,7 @@ interface Store extends AppState {
   toggleFavorite: (id: string) => void;
   duplicatePage: (id: string) => string;
   addBlock: (pageId: string, afterId: string, type?: BlockType) => string;
+  insertSnippet: (pageId: string, afterId: string, key: string) => void;
   updateBlock: (pageId: string, blockId: string, content: string) => void;
   toggleTodo: (pageId: string, blockId: string) => void;
   deleteBlock: (pageId: string, blockId: string) => void;
@@ -473,6 +581,35 @@ export const useStore = create<Store>()(
           };
         });
         return newBlock.id;
+      },
+
+      insertSnippet(pageId, afterId, key) {
+        const snippet = SNIPPETS.find((s) => s.key === key);
+        if (!snippet) return;
+        const newBlocks: Block[] = snippet.blocks.map((b) => ({ ...b, id: uid() }));
+        set((s) => {
+          const page = s.pages[pageId];
+          if (!page) return s;
+          const blocks = [...page.blocks];
+          const idx = blocks.findIndex((b) => b.id === afterId);
+          const at = idx < 0 ? blocks.length : idx;
+          // Drop the trigger block if it's an empty text line so the snippet
+          // starts cleanly, otherwise insert right after it.
+          const anchor = blocks[at];
+          if (anchor && anchor.type === 'text' && anchor.content.trim() === '') {
+            blocks.splice(at, 1, ...newBlocks);
+          } else {
+            blocks.splice(at + 1, 0, ...newBlocks);
+          }
+          // Name an untitled page after the snippet for a template-like feel.
+          const named =
+            page.title.trim() === ''
+              ? { title: snippet.title, icon: snippet.icon }
+              : {};
+          return {
+            pages: { ...s.pages, [pageId]: { ...page, ...named, blocks, updatedAt: Date.now() } },
+          };
+        });
       },
 
       updateBlock(pageId, blockId, content) {
