@@ -43,13 +43,6 @@ export interface Habit {
   emoji: string;
 }
 
-// A single goal on the progress tree. Each goal is rendered as a leaf that
-// blooms once `done` flips to true; overall completion grows the whole tree.
-export interface TreeGoal {
-  id: string;
-  text: string;
-  done: boolean;
-}
 
 export interface AppState {
   pages: Record<string, Page>;
@@ -63,6 +56,7 @@ export interface AppState {
   habitLog: Record<string, boolean>;
   // Free-text note per day, keyed by dayKey.
   habitNotes: Record<string, string>;
-  // Progress tree — goals shown as leaves that bloom when completed.
-  treeGoals: TreeGoal[];
+  // Progress tree — number of completed Pomodoro focus sessions (the tree
+  // grows over the 25-minute timer; each finished session is counted here).
+  pomodoroCount: number;
 }

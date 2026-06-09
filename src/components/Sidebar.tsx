@@ -168,7 +168,7 @@ export function Sidebar({ onSearch }: SidebarProps) {
           onClick={goTree}
         >
           <span className="nav-icon">🌳</span>
-          Progress Tree
+          Focus Tree
         </button>
         <button className="nav-item">
           <span className="nav-icon">📥</span>
