@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AppState, Block, BlockType, Habit, Page, PageKind } from './types';
+import type { AppState, Block, BlockType, Habit, Page, PageKind, TreeGoal } from './types';
 
 // Default habits seeded for new workspaces.
 const DEFAULT_HABITS: Habit[] = [
@@ -14,6 +14,15 @@ const DEFAULT_HABITS: Habit[] = [
   { id: 'h-read', name: 'Read 30 minutes', emoji: '📚' },
   { id: 'h-journal', name: 'Journal & self-reflect', emoji: '✍️' },
   { id: 'h-plan', name: "Plan tomorrow's tasks", emoji: '📋' },
+];
+
+// Seed goals so the progress tree isn't empty on first launch.
+const DEFAULT_TREE_GOALS: TreeGoal[] = [
+  { id: 'g-1', text: 'Define this month’s main goal', done: false },
+  { id: 'g-2', text: 'Build a daily routine', done: false },
+  { id: 'g-3', text: 'Finish a book', done: false },
+  { id: 'g-4', text: 'Learn something new', done: false },
+  { id: 'g-5', text: 'Reach a fitness milestone', done: false },
 ];
 
 export const COVERS = [
@@ -302,6 +311,10 @@ interface Store extends AppState {
   goHome: () => void;
   goCalendar: () => void;
   goHabits: () => void;
+  goTree: () => void;
+  addTreeGoal: (text: string) => void;
+  toggleTreeGoal: (id: string) => void;
+  removeTreeGoal: (id: string) => void;
   addHabit: (name: string, emoji: string) => void;
   updateHabit: (id: string, name: string, emoji: string) => void;
   removeHabit: (id: string) => void;
@@ -333,6 +346,7 @@ export const useStore = create<Store>()(
       habits: DEFAULT_HABITS,
       habitLog: {},
       habitNotes: {},
+      treeGoals: DEFAULT_TREE_GOALS,
 
       createPage(parentId, kind = 'page') {
         const page = newPage(KIND_DEFAULTS[kind].title, parentId, kind);
@@ -455,6 +469,27 @@ export const useStore = create<Store>()(
 
       goHabits() {
         set({ view: 'habits' });
+      },
+
+      goTree() {
+        set({ view: 'tree' });
+      },
+
+      addTreeGoal(text) {
+        const trimmed = text.trim();
+        if (!trimmed) return;
+        const goal: TreeGoal = { id: uid(), text: trimmed, done: false };
+        set((s) => ({ treeGoals: [...s.treeGoals, goal] }));
+      },
+
+      toggleTreeGoal(id) {
+        set((s) => ({
+          treeGoals: s.treeGoals.map((g) => (g.id === id ? { ...g, done: !g.done } : g)),
+        }));
+      },
+
+      removeTreeGoal(id) {
+        set((s) => ({ treeGoals: s.treeGoals.filter((g) => g.id !== id) }));
       },
 
       addHabit(name, emoji) {

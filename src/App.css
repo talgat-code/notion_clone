@@ -1581,3 +1581,198 @@ th.ht-habit { font-size: 16px; min-width: 42px; text-align: center; }
 .search-result-title { font-size: 14px; color: var(--text); font-weight: 500; }
 .search-result-path  { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
 .search-empty { padding: 28px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+/* ─────────── Progress Tree ─────────── */
+.ptree {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 36px 40px 120px;
+  animation: slideUp .4s var(--ease-out);
+}
+.ptree-title {
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: -1.4px;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+.ptree-quote {
+  border-left: 3px solid var(--accent);
+  padding: 2px 0 2px 14px;
+  margin-bottom: 30px;
+  font-size: 15px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+.ptree-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}
+
+/* Tree stage card */
+.ptree-stage-card {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 24px 24px;
+  box-shadow: var(--shadow-sm);
+}
+.ptree-svg {
+  width: 100%;
+  height: auto;
+  max-height: 460px;
+  display: block;
+}
+.ptree-ground { fill: var(--surface-hi); }
+.ptree-leaf {
+  fill: var(--border-hi);
+  opacity: .6;
+  transition: r .45s var(--ease-out), opacity .45s var(--ease-out), fill .3s;
+}
+.ptree-leaf--on {
+  opacity: 1;
+  filter: drop-shadow(0 2px 3px rgba(47,158,68,.35));
+}
+.ptree-stage-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+.ptree-stage-emoji { font-size: 38px; line-height: 1; }
+.ptree-stage-label {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+.ptree-stage-count {
+  font-size: 13.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.ptree-bar {
+  margin-top: 16px;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--surface-hi);
+  overflow: hidden;
+}
+.ptree-bar-fill {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #7ed957, #2f9e44);
+  transition: width .5s var(--ease-out);
+}
+
+/* Goal list card */
+.ptree-goals-card {
+  flex: 0 0 320px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px 18px 20px;
+  box-shadow: var(--shadow-sm);
+}
+.ptree-goals-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.ptree-goals-icon { font-size: 18px; }
+.ptree-goals-head h2 { font-size: 16px; font-weight: 700; color: var(--text); }
+.ptree-goals { display: flex; flex-direction: column; gap: 4px; }
+.ptree-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: 8px;
+}
+.ptree-goal:hover { background: var(--surface-hi); }
+.ptree-goal:hover .ptree-goal-remove { opacity: 1; }
+.ptree-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid var(--border-hi);
+  background: var(--surface);
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+}
+.ptree-check--on {
+  background: #2f9e44;
+  border-color: #2f9e44;
+}
+.ptree-goal-text {
+  flex: 1 1 auto;
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ptree-goal--done .ptree-goal-text {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+.ptree-goal-remove {
+  flex: 0 0 auto;
+  opacity: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 5px;
+  transition: opacity .15s, background .15s, color .15s;
+}
+.ptree-goal-remove:hover { background: var(--border-hi); color: var(--text); }
+.ptree-goals-empty {
+  padding: 10px 6px;
+  font-size: 13.5px;
+  color: var(--text-faint);
+}
+.ptree-add {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ptree-add-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+.ptree-add-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.ptree-add-btn {
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ptree-add-btn:hover { filter: brightness(1.05); }
+
+@media (max-width: 820px) {
+  .ptree-layout { flex-direction: column; }
+  .ptree-goals-card { flex-basis: auto; width: 100%; }
+}

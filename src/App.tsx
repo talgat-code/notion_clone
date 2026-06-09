@@ -5,6 +5,7 @@ import { HomePage } from './components/HomePage';
 import { PageView } from './components/PageView';
 import { Calendar } from './components/Calendar';
 import { Habits } from './components/Habits';
+import { ProgressTree } from './components/ProgressTree';
 import { SearchModal } from './components/SearchModal';
 import { AuthScreen } from './components/AuthScreen';
 import { useStore } from './store';
@@ -50,6 +51,8 @@ export default function App() {
             <Calendar />
           ) : view === 'habits' ? (
             <Habits />
+          ) : view === 'tree' ? (
+            <ProgressTree />
           ) : activePage ? (
             <PageView pageId={activePage} />
           ) : (

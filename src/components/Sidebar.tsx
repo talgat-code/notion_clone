@@ -110,7 +110,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onSearch }: SidebarProps) {
-  const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, goHabits, visitPage } = useStore();
+  const { pages, rootPages, view, activePage, createPage, goHome, goCalendar, goHabits, goTree, visitPage } = useStore();
   const user = useCurrentUser();
   const [showProfile, setShowProfile] = useState(false);
   const [showNewMenu, setShowNewMenu] = useState(false);
@@ -162,6 +162,13 @@ export function Sidebar({ onSearch }: SidebarProps) {
         >
           <span className="nav-icon">✅</span>
           Habits
+        </button>
+        <button
+          className={`nav-item ${view === 'tree' ? 'nav-item--active' : ''}`}
+          onClick={goTree}
+        >
+          <span className="nav-icon">🌳</span>
+          Progress Tree
         </button>
         <button className="nav-item">
           <span className="nav-icon">📥</span>
