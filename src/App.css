@@ -1620,21 +1620,23 @@ th.ht-habit { font-size: 16px; min-width: 42px; text-align: center; }
   padding: 20px 24px 24px;
   box-shadow: var(--shadow-sm);
 }
-.ptree-svg {
-  width: 100%;
-  height: auto;
-  max-height: 460px;
-  display: block;
+.ptree-img-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 420px;
+  padding: 8px;
 }
-.ptree-ground { fill: var(--surface-hi); }
-.ptree-leaf {
-  fill: var(--border-hi);
-  opacity: .6;
-  transition: r .45s var(--ease-out), opacity .45s var(--ease-out), fill .3s;
+.ptree-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 22px rgba(15,15,15,.16));
+  animation: ptreeGrow .5s var(--ease-out);
 }
-.ptree-leaf--on {
-  opacity: 1;
-  filter: drop-shadow(0 2px 3px rgba(47,158,68,.35));
+@keyframes ptreeGrow {
+  from { opacity: 0; transform: scale(.92) translateY(8px); }
+  to   { opacity: 1; transform: none; }
 }
 .ptree-stage-info {
   display: flex;
@@ -1642,7 +1644,6 @@ th.ht-habit { font-size: 16px; min-width: 42px; text-align: center; }
   gap: 14px;
   margin-top: 8px;
 }
-.ptree-stage-emoji { font-size: 38px; line-height: 1; }
 .ptree-stage-label {
   font-size: 20px;
   font-weight: 700;
